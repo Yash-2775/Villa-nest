@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   MapPin,
   IndianRupee,
@@ -33,6 +33,12 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
 
   const { user } = useAuth();
   const { toast } = useToast();
+    const navigate = useNavigate();
+
+  const goToDetails = () => {
+    navigate(`/villas/${encodeURIComponent(villa.id)}`);
+  };
+
 
   /* ================= ADMIN CHECK ================= */
   const [isAdmin, setIsAdmin] = useState(false);
@@ -76,9 +82,11 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
 
   /* ================= SAFE DEFAULTS ================= */
   const pricePerNight =
-    typeof villa.price_per_night === "number"
-      ? villa.price_per_night
-      : 0;
+  typeof villa.pricePerNight === "number"
+    ? villa.pricePerNight
+    : typeof (villa as any).price_per_night === "number"
+    ? (villa as any).price_per_night
+    : 0;
 
   const hourlyPrice =
     typeof villa.price_hourly === "number"
@@ -101,26 +109,35 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
         </div>
       )}
 
-      <div
-        className="group bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-elegant transition-all duration-500 animate-fade-in border border-border/50 relative"
-        style={{ animationDelay: `${index * 0.1}s` }}
-      >
+      <div onClick={goToDetails}
+          className="group bg-card cursor-pointer rounded-2xl overflow-hidden shadow-md hover:shadow-elegant transition-all duration-500 animate-fade-in border border-border/50 relative"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+
         {/* ================= ADMIN CONTROLS ================= */}
         {isAdmin && (
           <div className="absolute top-3 left-3 z-20 flex gap-2">
             <Button
               size="icon"
               variant="secondary"
-              onClick={() => setEditing(true)}   // ✅ EDIT
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+              }}
             >
+
               <Pencil className="w-4 h-4" />
             </Button>
 
             <Button
-              size="icon"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+                size="icon"
+                variant="destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+              >
+
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -208,9 +225,16 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
             )}
           </div>
 
-          <Link to={`/villas/${villa.id}`}>
-            <Button className="w-full">View Details</Button>
-          </Link>
+          <Button
+            className="w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              goToDetails();
+            }}
+            >
+            View Details
+          </Button>
+
         </div>
       </div>
     </>

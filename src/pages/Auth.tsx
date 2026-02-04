@@ -9,6 +9,9 @@ import { auth } from "@/firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/firestore";
+
 import {
   Card,
   CardContent,
@@ -99,67 +102,43 @@ const Auth = () => {
 
   /* ---------- SIGN UP ---------- */
   const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+  setLoading(true);
 
-    if (!displayName.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter your name",
-        variant: "destructive",
-      });
-      return;
-    }
+  try {
+    const result = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-    if (!isValidEmail(email)) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
-    }
+    // ✅ Update Auth profile
+    await updateProfile(result.user, {
+      displayName: displayName.trim(),
+    });
 
-    if (password.length < 6) {
-      toast({
-        title: "Weak password",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return;
-    }
+    // ✅ CREATE FIRESTORE USER DOCUMENT (CRITICAL)
+    await setDoc(doc(db, "users", result.user.uid), {
+      name: displayName.trim(),
+      email,
+      role: "user",           // 👈 IMPORTANT
+      createdAt: serverTimestamp(),
+    });
 
-    setLoading(true);
+    toast({ title: "Account created successfully" });
+    navigate(from, { replace: true });
 
-    try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+  } catch (error: any) {
+    toast({
+      title: "Registration error",
+      description: error.message,
+      variant: "destructive",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
-      // ✅ Save display name in Firebase Auth
-      await updateProfile(result.user, {
-        displayName: displayName.trim(),
-      });
-
-      toast({ title: "Account created successfully" });
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      let message = "Sign up failed";
-
-      if (error.code === "auth/email-already-in-use") {
-        message = "This email is already registered";
-      }
-
-      toast({
-        title: "Registration error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-light via-background to-cream flex items-center justify-center p-4">

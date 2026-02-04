@@ -11,3 +11,6 @@ const firebaseConfig = {
 
 // ✅ Prevent duplicate Firebase initialization
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+
+// If want secert keys take from .env
