@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import VillaGrid from "@/components/VillaGrid";
 import AddVillaForm from "@/components/AddVillaForm"; // ✅ NEW
+import Footer from "@/components/Footer";
 import { Leaf } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext"; // ✅ NEW
@@ -31,10 +32,11 @@ const Index = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
+      
+      <main className="flex-1">
 
-      <main>
         <HeroSection />
 
         {/* ================= PROPERTIES SECTION ================= */}
@@ -59,26 +61,8 @@ const Index = () => {
           {/* EXISTING GRID — UNCHANGED */}
           <VillaGrid />
         </section>
-
-        {/* ================= FOOTER ================= */}
-        <footer className="bg-foreground text-background py-12">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                  <Leaf className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <span className="font-display text-xl font-semibold">
-                  VillaNest
-                </span>
-              </div>
-              <p className="text-sm opacity-70">
-                © 2024 VillaNest. Find your perfect getaway.
-              </p>
-            </div>
-          </div>
-        </footer>
       </main>
+          <Footer />
     </div>
   );
 };
