@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Leaf, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 /* ---------- Helpers ---------- */
@@ -102,50 +102,50 @@ const Auth = () => {
 
   /* ---------- SIGN UP ---------- */
   const handleSignUp = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const result = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    try {
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-    // ✅ Update Auth profile
-    await updateProfile(result.user, {
-      displayName: displayName.trim(),
-    });
+      // ✅ Update Auth profile
+      await updateProfile(result.user, {
+        displayName: displayName.trim(),
+      });
 
-    // ✅ CREATE FIRESTORE USER DOCUMENT (CRITICAL)
-    await setDoc(doc(db, "users", result.user.uid), {
-      name: displayName.trim(),
-      email,
-      role: "user",           // 👈 IMPORTANT
-      createdAt: serverTimestamp(),
-    });
+      // ✅ CREATE FIRESTORE USER DOCUMENT (CRITICAL)
+      await setDoc(doc(db, "users", result.user.uid), {
+        name: displayName.trim(),
+        email,
+        role: "user",           // 👈 IMPORTANT
+        createdAt: serverTimestamp(),
+      });
 
-    toast({ title: "Account created successfully" });
-    navigate(from, { replace: true });
+      toast({ title: "Account created successfully" });
+      navigate(from, { replace: true });
 
-  } catch (error: any) {
-    toast({
-      title: "Registration error",
-      description: error.message,
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error: any) {
+      toast({
+        title: "Registration error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-light via-background to-cream flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-            <Leaf className="w-6 h-6 text-primary-foreground" />
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-1 border border-primary/5 overflow-hidden">
+            <img src="/villalogo.jpeg" alt="Logo" className="w-full h-full object-cover rounded-full" />
           </div>
           <span className="font-display text-2xl font-bold">VillaNest</span>
         </Link>

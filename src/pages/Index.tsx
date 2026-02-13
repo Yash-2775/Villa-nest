@@ -1,9 +1,9 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import VillaGrid from "@/components/VillaGrid";
+import SanctuaryTrust from "@/components/SanctuaryTrust";
 import AddVillaForm from "@/components/AddVillaForm"; // ✅ NEW
 import Footer from "@/components/Footer";
-import { Leaf } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext"; // ✅ NEW
 import { doc, getDoc } from "firebase/firestore"; // ✅ NEW
@@ -32,37 +32,40 @@ const Index = () => {
   }, [user]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-accent selection:text-white">
       <Navbar />
-      
-      <main className="flex-1">
 
+      <main className="flex-1">
         <HeroSection />
 
-        {/* ================= PROPERTIES SECTION ================= */}
-        <section id="properties" className="container mx-auto px-4 pt-10">
+        {/* ================= COMMITMENT / TRUST ACT ================= */}
+        <SanctuaryTrust />
 
+        {/* ================= PROPERTIES SECTION ================= */}
+        <div id="properties" className="relative grainy">
           {/* ✅ ADMIN ONLY BUTTON */}
           {isAdmin && (
-            <div className="mb-6 flex justify-end">
-              <Button onClick={() => setShowAddVilla((v) => !v)}>
-                {showAddVilla ? "Close Form" : "+ Add Property"}
+            <div className="container mx-auto px-4 py-10 flex justify-end">
+              <Button
+                onClick={() => setShowAddVilla((v) => !v)}
+                className="rounded-full px-8 bg-primary hover:bg-black font-black uppercase tracking-widest text-[10px]"
+              >
+                {showAddVilla ? "Close Villa Form" : "+ Propose New Villa"}
               </Button>
             </div>
           )}
 
           {/* ✅ ADMIN ONLY FORM */}
           {isAdmin && showAddVilla && (
-            <div className="mb-10">
+            <div className="container mx-auto px-4 mb-10">
               <AddVillaForm />
             </div>
           )}
 
-          {/* EXISTING GRID — UNCHANGED */}
           <VillaGrid />
-        </section>
+        </div>
       </main>
-          <Footer />
+      <Footer />
     </div>
   );
 };

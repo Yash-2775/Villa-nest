@@ -56,13 +56,16 @@ export default {
         cream: "hsl(var(--cream))",
       },
       fontFamily: {
-        display: ["Playfair Display", "serif"],
-        body: ["Poppins", "sans-serif"],
+        display: ["Cormorant Garamond", "serif"],
+        body: ["Outfit", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        'ShadowElegant': '0 20px 25px -5px rgba(0, 40, 40, 0.1), 0 8px 10px -6px rgba(0, 40, 40, 0.1)',
       },
     },
   },

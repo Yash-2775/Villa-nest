@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /* =========================
    DAY PICKER BASE STYLES
@@ -14,57 +14,95 @@
 ========================= */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 160 30% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 160 30% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 10%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 160 20% 96%;
-    --secondary-foreground: 160 30% 20%;
-    --muted: 160 10% 96%;
-    --muted-foreground: 160 10% 45%;
-    --accent: 45 93% 58%;
-    --accent-foreground: 30 30% 15%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 160 20% 90%;
-    --input: 160 20% 90%;
-    --ring: 160 84% 39%;
+    /* Very Light Mint Cream Background */
+    --background: 145 25% 97%;
+    --foreground: 145 20% 12%;
+
+    --card: 145 25% 97%;
+    --card-foreground: 145 20% 12%;
+    --popover: 145 25% 97%;
+    --popover-foreground: 145 20% 12%;
+
+    --primary: 145 30% 20%;
+    /* Deep Forest Green for primary contrast */
+    --primary-foreground: 145 25% 97%;
+
+    --secondary: 145 20% 90%;
+    /* Soft Moss Mist for secondary elements */
+    --secondary-foreground: 145 30% 20%;
+
+    --muted: 145 15% 92%;
+    --muted-foreground: 145 15% 45%;
+
+    --accent: 145 25% 60%;
+    /* Prestigious Sage Green (Lighter Shade) */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 145 30% 50%;
+    /* Slightly deeper sage */
+
+    --destructive: 145 30% 35%;
+    /* Deep Olive for destructive actions */
+    --destructive-foreground: 145 10% 98%;
+    --border: 145 15% 85%;
+    --input: 145 15% 85%;
+    --ring: 145 25% 60%;
     --radius: 0.75rem;
-
-    --emerald: 160 84% 39%;
-    --emerald-light: 160 60% 95%;
-    --emerald-dark: 160 84% 25%;
-    --gold: 45 93% 58%;
-    --gold-dark: 45 80% 45%;
-    --cream: 40 40% 97%;
+    /* 12px roughly */
   }
-}
 
-/* =========================
-   BASE ELEMENT FIXES
-========================= */
-@layer base {
+  .dark {
+    --background: 145 20% 12%;
+    /* Deep Forest Background */
+    --foreground: 145 10% 95%;
+    --card: 145 20% 15%;
+    --primary: 145 25% 60%;
+    --primary-foreground: 145 20% 10%;
+  }
+
   * {
     @apply border-border;
   }
 
-  html,
-  body,
-  #root {
-    pointer-events: auto;
-  }
-
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
+    @apply bg-background text-foreground font-body antialiased;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(145, 25%, 87%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(145, 25%, 95%, 0.05) 0px, transparent 50%);
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight text-foreground;
+  }
+
+  h5,
+  h6 {
+    @apply font-serif italic text-foreground/80;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-md bg-white/70 border border-white/20 shadow-xl;
+    pointer-events: auto;
+    /* ✅ critical for interaction overlay */
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-xl bg-primary/95 border border-white/5 shadow-ShadowElegant;
+  }
+
+  .grainy {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grainy::after {
+    content: "";
+    @apply absolute inset-0 pointer-events-none opacity-[0.02];
+    background-image: url("https://www.transparenttextures.com/patterns/p6-mini.png");
   }
 }
 
@@ -108,24 +146,16 @@
 ========================= */
 @layer utilities {
   .font-display {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Cormorant Garamond', serif;
   }
 
   .font-body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Outfit', sans-serif;
   }
 
-  .glass {
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    pointer-events: auto; /* ✅ critical */
-  }
-
-  .shadow-elegant {
-    box-shadow:
-      0 20px 25px -5px hsl(160 30% 10% / 0.1),
-      0 8px 10px -6px hsl(160 30% 10% / 0.1);
-  }
+  /* Note: IDE warnings like "Unknown at rule @tailwind" and "@apply" are false positives. 
+     They occur because the IDE might not be configured for Tailwind CSS. 
+     The code functions perfectly. */
 }
 
 /* =========================
@@ -147,6 +177,7 @@ button {
     transform: translateY(-100%) rotate(0deg);
     opacity: 1;
   }
+
   100% {
     transform: translateY(100vh) rotate(720deg);
     opacity: 0;

@@ -33,7 +33,7 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
 
   const { user } = useAuth();
   const { toast } = useToast();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const goToDetails = () => {
     navigate(`/villas/${encodeURIComponent(villa.id)}`);
@@ -82,11 +82,11 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
 
   /* ================= SAFE DEFAULTS ================= */
   const pricePerNight =
-  typeof villa.pricePerNight === "number"
-    ? villa.pricePerNight
-    : typeof (villa as any).price_per_night === "number"
-    ? (villa as any).price_per_night
-    : 0;
+    typeof villa.pricePerNight === "number"
+      ? villa.pricePerNight
+      : typeof (villa as any).price_per_night === "number"
+        ? (villa as any).price_per_night
+        : 0;
 
   const hourlyPrice =
     typeof villa.price_hourly === "number"
@@ -109,49 +109,23 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
         </div>
       )}
 
-      <div onClick={goToDetails}
-          className="group bg-card cursor-pointer rounded-2xl overflow-hidden shadow-md hover:shadow-elegant transition-all duration-500 animate-fade-in border border-border/50 relative"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-
-        {/* ================= ADMIN CONTROLS ================= */}
-        {isAdmin && (
-          <div className="absolute top-3 left-3 z-20 flex gap-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditing(true);
-              }}
-            >
-
-              <Pencil className="w-4 h-4" />
-            </Button>
-
-            <Button
-                size="icon"
-                variant="destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-              >
-
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
-
+      <div
+        onClick={goToDetails}
+        className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-700 animate-fade-in relative bg-card border border-black/5 flex flex-col h-full"
+        style={{
+          animationDelay: `${index * 0.1}s`,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+        }}
+      >
         {/* ================= IMAGE ================= */}
-        <div className="relative h-56 overflow-hidden">
+        <div className="relative h-72 overflow-hidden shrink-0">
           <img
             src={villa.main_image_url || "/placeholder.svg"}
             alt={villa.name || "Villa"}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[2s] ease-out"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-40" />
 
           {/* Favorite */}
           <button
@@ -161,80 +135,71 @@ const VillaCard = ({ villa, index }: VillaCardProps) => {
               toggleFavorite(villa.id);
             }}
             disabled={loading}
-            className={`absolute bottom-4 right-4 p-2 rounded-full backdrop-blur-sm transition ${
-              favorite
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-background/80 text-muted-foreground hover:text-destructive"
-            }`}
+            className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md transition-all duration-500 shadow-lg ${favorite
+              ? "bg-accent text-white scale-110"
+              : "bg-background/60 text-foreground hover:bg-background/80 border border-black/5"
+              }`}
           >
             <Heart
-              className={`w-5 h-5 ${favorite ? "fill-current" : ""}`}
+              className={`w-4 h-4 ${favorite ? "fill-current" : ""}`}
             />
           </button>
 
-          {/* Rating */}
-          {typeof villa.avg_rating === "number" && (
-            <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-background/90 px-2 py-1 rounded-full">
-              <Star className="w-4 h-4 fill-accent text-accent" />
-              <span className="text-sm font-semibold">
-                {villa.avg_rating.toFixed(1)}
+          {/* Badge */}
+          <div className="absolute top-4 left-4 z-10 px-4 py-1.5 bg-background border border-black/5 text-foreground text-[9px] font-black uppercase tracking-widest rounded-full">
+            Verified
+          </div>
+
+          {/* Price Overlay */}
+          <div className="absolute bottom-4 left-4">
+            <div className="bg-foreground text-white px-5 py-2.5 rounded-2xl flex items-baseline gap-1.5 shadow-2xl border border-white/10">
+              <span className="text-xl font-black tracking-tighter">
+                ₹{pricePerNight.toLocaleString()}
               </span>
+              <span className="text-white/60 text-[8px] font-bold uppercase tracking-widest">/ night</span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* ================= CONTENT ================= */}
-        <div className="p-6">
-          <h3 className="font-display text-xl font-semibold mb-2 group-hover:text-primary transition">
-            {villa.name || "Unnamed Villa"}
-          </h3>
+        <div className="p-8 flex-1 flex flex-col">
+          <div className="space-y-6 flex-1">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-foreground leading-tight transition-colors duration-500 min-h-[3.5rem] line-clamp-2">
+                {villa.name || "Unnamed Villa"}
+              </h3>
 
-          {villa.location && (
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-4">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-sm">{villa.location}</span>
+              {villa.location && (
+                <div className="flex items-center gap-1.5 text-foreground/40 leading-none">
+                  <MapPin className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{villa.location}</span>
+                </div>
+              )}
             </div>
-          )}
 
-          {amenities.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-5">
+            <div className="flex flex-wrap gap-2">
               {amenities.slice(0, 3).map((amenity) => (
                 <span
                   key={amenity}
-                  className="text-xs px-2.5 py-1 bg-secondary rounded-full"
+                  className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 bg-secondary text-foreground/60 rounded-full"
                 >
                   {amenity}
                 </span>
               ))}
             </div>
-          )}
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1">
-              <IndianRupee className="w-4 h-4" />
-              <span className="font-bold text-lg">
-                {pricePerNight.toLocaleString()}
-              </span>
-              <span className="text-xs opacity-70">/night</span>
-            </div>
-
-            {hourlyPrice && (
-              <span className="text-xs opacity-70">
-                ₹{hourlyPrice}/hr
-              </span>
-            )}
           </div>
 
-          <Button
-            className="w-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToDetails();
-            }}
+          <div className="pt-6">
+            <Button
+              className="w-full h-14 rounded-full bg-accent hover:bg-accent-hover text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-accent/10 transition-all duration-300"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToDetails();
+              }}
             >
-            View Details
-          </Button>
-
+              Check Availability
+            </Button>
+          </div>
         </div>
       </div>
     </>

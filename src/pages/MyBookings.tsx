@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { Link } from "react-router-dom";
 import {
   collection,
   query,
@@ -8,19 +8,19 @@ import {
   getDocs,
   updateDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 
 import { db } from "@/firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 
+
 import Navbar from "@/components/Navbar";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 import {
-  IndianRupee,
   CalendarDays,
   Home,
   XCircle,
@@ -46,7 +46,7 @@ interface Booking {
   total_price: number;
   booking_type: "hourly" | "nightly";
   status: "confirmed" | "completed" | "cancelled";
-  payment?: PaymentInfo; // ✅ ADDED (NON-BREAKING)
+  payment?: PaymentInfo;
 }
 
 /* ---------------- HELPERS ---------------- */
@@ -66,17 +66,38 @@ const MyBookings = () => {
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  /* 🔐 CHECK ADMIN */
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const snap = await getDoc(doc(db, "users", user.uid));
+      setIsAdmin(snap.exists() && snap.data().role === "admin");
+    };
+    checkAdmin();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchBookings = async () => {
       try {
-        const q = query(
-          collection(db, "bookings"),
-          where("user_id", "==", user.uid),
-          orderBy("created_at", "desc")
-        );
+        let q;
+        if (isAdmin) {
+          // Admins see everything
+          q = query(
+            collection(db, "bookings"),
+            orderBy("created_at", "desc")
+          );
+        } else {
+          // Regular users see only their own
+          q = query(
+            collection(db, "bookings"),
+            where("user_id", "==", user.uid),
+            orderBy("created_at", "desc")
+          );
+        }
 
         const snapshot = await getDocs(q);
 
@@ -85,15 +106,15 @@ const MyBookings = () => {
           ...(docSnap.data() as Omit<Booking, "id">),
         }));
 
-        const normalized = await Promise.all(
+        const normalized: Booking[] = await Promise.all(
           data.map(async (b) => {
             if (b.status === "confirmed" && isPastBooking(b.end_date)) {
               await updateDoc(doc(db, "bookings", b.id), {
                 status: "completed",
               });
-              return { ...b, status: "completed" };
+              return { ...b, status: "completed" as const };
             }
-            return b;
+            return b as Booking;
           })
         );
 
@@ -106,7 +127,7 @@ const MyBookings = () => {
     };
 
     fetchBookings();
-  }, [user]);
+  }, [user, isAdmin]);
 
   /* ---------------- CANCEL BOOKING ---------------- */
 
@@ -124,7 +145,7 @@ const MyBookings = () => {
 
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "cancelled" } : b
+          b.id === bookingId ? ({ ...b, status: "cancelled" } as Booking) : b
         )
       );
 
@@ -146,11 +167,11 @@ const MyBookings = () => {
   const statusBadge = (status: Booking["status"]) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-emerald-500 text-white">Confirmed</Badge>;
+        return <Badge className="bg-emerald-500 text-white border-none">Confirmed</Badge>;
       case "completed":
-        return <Badge variant="secondary">Completed</Badge>;
+        return <Badge variant="secondary" className="bg-secondary text-foreground/60 border-none">Completed</Badge>;
       case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
+        return <Badge variant="destructive" className="border-none">Cancelled</Badge>;
     }
   };
 
@@ -160,92 +181,120 @@ const MyBookings = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="pt-24 container mx-auto px-4 max-w-4xl">
-        <h1 className="font-display text-3xl mb-6">My Bookings</h1>
+      <main className="pt-32 container mx-auto px-6 max-w-5xl space-y-12">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <CalendarDays className="w-5 h-5 text-primary" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter">
+              {isAdmin ? "Management Portal" : "Your Journeys"}
+            </h1>
+            {isAdmin && (
+              <Badge className="bg-accent text-white border-none px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ml-4">
+                Administrator
+              </Badge>
+            )}
+          </div>
+          <p className="text-foreground/40 text-sm font-light max-w-lg">
+            {isAdmin
+              ? "Oversee and manage all platform bookings and guest itineraries."
+              : "A chronological record of your coastal escapes and upcoming villa journeys."}
+          </p>
+        </div>
 
         {loading ? (
-          <p className="text-muted-foreground">Loading bookings…</p>
+          <div className="space-y-6">
+            {[1, 2].map(i => (
+              <div key={i} className="h-48 bg-secondary/30 rounded-3xl animate-pulse" />
+            ))}
+          </div>
         ) : bookings.length === 0 ? (
-          <p className="text-muted-foreground">You have no bookings yet.</p>
+          <div className="py-32 text-center space-y-8 bg-secondary/30 rounded-[3rem] border border-black/5">
+            <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mx-auto">
+              <CalendarDays className="w-8 h-8 text-primary/20" />
+            </div>
+            <p className="text-xl font-bold text-foreground/40 italic">
+              Your itinerary is currently clear.
+            </p>
+            <Link to="/">
+              <Button variant="outline" className="rounded-full px-10 h-14 border-black/10 hover:bg-background transition-all font-black uppercase tracking-widest text-[9px]">
+                Find a Villa
+              </Button>
+            </Link>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {bookings.map((b) => (
-              <Card key={b.id} className="border-border/50 shadow-sm">
-                <CardContent className="p-5 space-y-3">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <Home className="w-4 h-4 text-primary" />
-                      Villa ID: {b.villa_id}
-                    </div>
-                    {statusBadge(b.status)}
-                  </div>
+              <div
+                key={b.id}
+                className="group relative bg-card rounded-[2.5rem] p-10 border border-black/5 shadow-sm hover:shadow-xl transition-all duration-700 overflow-hidden"
+              >
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
-                  {/* Dates */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CalendarDays className="w-4 h-4" />
-                    {b.start_date} → {b.end_date}
-                  </div>
-
-                  {/* Type */}
-                  <Badge variant="outline" className="w-fit">
-                    {b.booking_type === "hourly"
-                      ? "Day Visit"
-                      : "Overnight Stay"}
-                  </Badge>
-
-                  {/* Price */}
-                  <div className="flex items-center gap-1 text-primary font-semibold">
-                    <IndianRupee className="w-4 h-4" />
-                    {b.total_price.toLocaleString()}
-                  </div>
-
-                  {/* ✅ PAYMENT DETAILS (PHASE 17.3) */}
-                  {b.payment && (
-                    <div className="mt-3 p-3 rounded-lg bg-secondary/40 text-sm space-y-1">
-                      <div className="flex items-center gap-2 font-semibold">
-                        <CreditCard className="w-4 h-4 text-primary" />
-                        Payment Details
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                  <div className="space-y-6 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                          <Home className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40 leading-none">Villa: {b.villa_id}</span>
                       </div>
+                      {statusBadge(b.status)}
+                    </div>
 
-                      <p>
-                        <span className="font-medium">Status:</span>{" "}
-                        <span className="text-green-600 capitalize">
-                          {b.payment.status}
-                        </span>
-                      </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+                        <span>{b.start_date}</span>
+                        <span className="text-foreground/20">→</span>
+                        <span>{b.end_date}</span>
+                      </div>
+                      <Badge variant="outline" className="h-8 px-4 rounded-full border-black/5 text-[9px] font-black uppercase tracking-widest text-foreground/40">
+                        {b.booking_type === "hourly" ? "Day Visit" : "Overnight Stay"}
+                      </Badge>
+                    </div>
 
-                      <p>
-                        <span className="font-medium">Transaction ID:</span>{" "}
-                        {b.payment.transaction_id}
-                      </p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-black tracking-tighter">₹{b.total_price.toLocaleString()}</span>
+                      <span className="text-foreground/40 text-[10px] font-bold uppercase tracking-widest">Investment Total</span>
+                    </div>
 
-                      <p>
-                        <span className="font-medium">Amount Paid:</span> ₹
-                        {b.payment.amount.toLocaleString()}
-                      </p>
+                    {b.payment && (
+                      <div className="p-6 rounded-2xl bg-secondary/30 border border-black/5 space-y-4">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Payment Ledger</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="block text-[8px] font-black uppercase tracking-widest text-foreground/40">Method</span>
+                            <span className="text-xs font-bold uppercase">{b.payment.method}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[8px] font-black uppercase tracking-widest text-foreground/40">Transaction</span>
+                            <span className="text-xs font-bold uppercase truncate block">{b.payment.transaction_id}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                      <p>
-                        <span className="font-medium">Method:</span>{" "}
-                        {b.payment.method}
-                      </p>
+                  {b.status === "confirmed" && (
+                    <div className="flex flex-col gap-4">
+                      <Button
+                        variant="destructive"
+                        size="lg"
+                        onClick={() => cancelBooking(b.id)}
+                        className="h-14 rounded-full px-8 bg-black/5 hover:bg-destructive text-destructive hover:text-white border border-destructive/20 font-black uppercase tracking-widest text-[9px] transition-all"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Retract Journey
+                      </Button>
                     </div>
                   )}
-
-                  {/* Cancel Button */}
-                  {b.status === "confirmed" && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => cancelBooking(b.id)}
-                      className="mt-2"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Cancel Booking
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
