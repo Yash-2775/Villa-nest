@@ -54,9 +54,6 @@ const Index = () => {
             </p>
           </div>
 
-          {/* ================= COMMITMENT / TRUST ACT ================= */}
-          <SanctuaryTrust />
-
           {/* ✅ ADMIN ONLY BUTTON */}
           {isAdmin && (
             <div className="container mx-auto px-4 py-10 flex justify-end">
@@ -77,6 +74,9 @@ const Index = () => {
           )}
 
           <VillaGrid showHeader={false} />
+
+          {/* ================= COMMITMENT / TRUST ACT ================= */}
+          <SanctuaryTrust />
         </div>
       </main>
       <Footer />
