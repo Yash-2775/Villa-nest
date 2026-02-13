@@ -15,7 +15,11 @@ const MI = ({ name, className = "" }: { name: string; className?: string }) => (
   <span className={`material-icons-outlined ${className}`}>{name}</span>
 );
 
-const VillaGrid = () => {
+interface VillaGridProps {
+  showHeader?: boolean;
+}
+
+const VillaGrid = ({ showHeader = true }: VillaGridProps) => {
   const [allVillas, setAllVillas] = useState<Villa[]>([]);
   const [filteredVillas, setFilteredVillas] = useState<Villa[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,19 +87,21 @@ const VillaGrid = () => {
   }
 
   return (
-    <section id="properties" className="py-32 bg-background relative overflow-hidden Grainy border-t border-black/5">
+    <section id="properties" className={`py-32 bg-background relative overflow-hidden Grainy ${showHeader ? "border-t border-black/5" : ""}`}>
       <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-20">
-        <div className="text-center space-y-6">
-          <Badge variant="outline" className="px-6 py-2 border-black/5 text-foreground/60 rounded-full text-[10px] font-black tracking-[0.3em] uppercase bg-secondary/50 shadow-sm">
-            Our Best Villas
-          </Badge>
-          <h2 className="text-6xl md:text-8xl font-black text-foreground tracking-tighter leading-none">
-            Selected <span className="text-accent italic font-serif">Villas</span>
-          </h2>
-          <p className="text-foreground/50 text-xl font-light tracking-wide max-w-2xl mx-auto">
-            Beautiful homes hand-picked for your perfect holiday.
-          </p>
-        </div>
+        {showHeader && (
+          <div className="text-center space-y-6">
+            <Badge variant="outline" className="px-6 py-2 border-black/5 text-foreground/60 rounded-full text-[10px] font-black tracking-[0.3em] uppercase bg-secondary/50 shadow-sm">
+              Our Best Villas
+            </Badge>
+            <h2 className="text-6xl md:text-8xl font-black text-foreground tracking-tighter leading-none">
+              Selected <span className="text-accent italic font-serif">Villas</span>
+            </h2>
+            <p className="text-foreground/50 text-xl font-light tracking-wide max-w-2xl mx-auto">
+              Beautiful homes hand-picked for your perfect holiday.
+            </p>
+          </div>
+        )}
 
         <div className="bg-secondary p-6 rounded-2xl border border-black/5 shadow-sm">
           <VillaFilters
