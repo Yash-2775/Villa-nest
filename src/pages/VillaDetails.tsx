@@ -19,6 +19,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { MapPin, Info, Calendar, Users, Home, Utensils, IndianRupee } from "lucide-react";
 
 /* ================= MATERIAL ICON ================= */
 const MI = ({ name, className = "" }: { name: string; className?: string }) => (
@@ -81,6 +96,8 @@ const VillaDetails = () => {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   /* ===== CALENDAR STATE ===== */
   const [showCalendar, setShowCalendar] = useState(false);
@@ -197,6 +214,90 @@ const VillaDetails = () => {
       toast({ title: "Failed to submit review", variant: "destructive" });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  /* ================= BOOKING LOGIC ================= */
+  const calculateTotalPrice = () => {
+    if (!villa || !checkIn || !checkOut) return 0;
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    let basePrice = villa.price_per_night;
+
+    if (bookingType === "hour") basePrice = villa.price_per_night / 10;
+    if (bookingType === "person") basePrice = villa.price_per_night / 2;
+
+    let total = basePrice * nights;
+    if (bookingType === "person") total *= guests;
+    if (stayType === "Private Rooms") total *= rooms;
+
+    return Math.round(total);
+  };
+
+  const handleInitiateBooking = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "You must be logged in to book a villa.",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!checkIn || !checkOut) {
+      toast({
+        title: "Missing dates",
+        description: "Please select check-in and check-out dates.",
+        variant: "destructive",
+      });
+      setShowCalendar(true);
+      return;
+    }
+
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!user || !villa || !checkIn || !checkOut) return;
+    setIsFinalizing(true);
+
+    const refId = "VN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const totalPrice = calculateTotalPrice();
+
+    try {
+      await addDoc(collection(db, "bookings"), {
+        villa_id: villa.id,
+        villa_name: villa.name,
+        user_id: user.uid,
+        user_email: user.email,
+        user_name: user.displayName || user.email,
+        start_date: checkIn.toISOString().split("T")[0],
+        end_date: checkOut.toISOString().split("T")[0],
+        total_price: totalPrice,
+        booking_type: bookingType === "hour" ? "hourly" : "nightly",
+        status: "confirmed",
+        created_at: serverTimestamp(),
+        rooms: stayType === "Private Rooms" ? rooms : "Full Villa",
+        meal_plan: foodOption,
+        guests: guests,
+        reference_id: refId,
+      });
+
+      setBookingId(refId);
+      setIsBooked(true);
+      setShowConfirmModal(false);
+      toast({
+        title: "Booking confirmed!",
+        description: "Your escape has been successfully scheduled.",
+      });
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast({
+        title: "Booking failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFinalizing(false);
     }
   };
 
@@ -322,10 +423,10 @@ const VillaDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
           {/* LEFT CONTENT */}
           <div className="lg:col-span-7 space-y-20">
-            {/* IMAGES GALLERY */}
-            <div className="grid grid-cols-4 grid-rows-2 gap-4 h-[500px] md:h-[700px] rounded-[3rem] overflow-hidden shadow-2xl">
+            {/* IMAGES GALLERY - DESKTOP */}
+            <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-4 h-[700px] rounded-[3rem] overflow-hidden shadow-2xl">
               <div
-                className="col-span-4 md:col-span-2 row-span-2 relative group overflow-hidden cursor-zoom-in"
+                className="col-span-2 row-span-2 relative group overflow-hidden cursor-zoom-in"
                 onClick={() => setEnlargedImage(villa.images[0])}
               >
                 <img
@@ -341,7 +442,7 @@ const VillaDetails = () => {
               {villa.images.slice(1, 4).map((img, i) => (
                 <div
                   key={i}
-                  className="hidden md:block relative group overflow-hidden cursor-zoom-in"
+                  className="relative group overflow-hidden cursor-zoom-in"
                   onClick={() => setEnlargedImage(img)}
                 >
                   <img
@@ -357,7 +458,7 @@ const VillaDetails = () => {
               {/* LAST IMAGE SLOT WITH GALLERY OVERLAY */}
               {villa.images[4] && (
                 <div
-                  className="hidden md:block relative group overflow-hidden cursor-zoom-in"
+                  className="relative group overflow-hidden cursor-zoom-in"
                   onClick={() => setEnlargedImage(villa.images[4])}
                 >
                   <img
@@ -374,6 +475,41 @@ const VillaDetails = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* IMAGES GALLERY - MOBILE CAROUSEL */}
+            <div className="md:hidden relative group">
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {villa.images.map((img, i) => (
+                    <CarouselItem key={i}>
+                      <div
+                        className="aspect-[4/3] rounded-[2rem] overflow-hidden shadow-xl"
+                        onClick={() => setEnlargedImage(img)}
+                      >
+                        <img
+                          src={img}
+                          alt={`${villa.name} - ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-bold uppercase tracking-widest">
+                  Swipe to view ({villa.images.length} images)
+                </div>
+              </Carousel>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5"
+                  onClick={() => setEnlargedImage(villa.images[0])}
+                >
+                  Click here to view all images
+                </Button>
+              </div>
             </div>
 
             {/* STACKED PROPERTY DETAILS (Image Style) */}
@@ -600,7 +736,7 @@ const VillaDetails = () => {
                   </div>
                   <div className="flex justify-between text-base border-t border-primary/10 pt-4">
                     <span className="font-bold">Total Villa Investment</span>
-                    <span className="text-xl font-black">₹{(villa.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))).toLocaleString()}</span>
+                    <span className="text-xl font-black">₹{calculateTotalPrice().toLocaleString()}</span>
                   </div>
                 </div>
               )}
@@ -640,7 +776,7 @@ const VillaDetails = () => {
                       </div>
                       <div className="flex justify-between items-center pt-3 border-t border-emerald-200/50">
                         <span className="text-[11px] font-bold text-emerald-900/40 uppercase tracking-tighter">Total Amount</span>
-                        <span className="text-lg font-black text-emerald-900 tracking-tighter">₹{(villa.price_per_night * (checkIn && checkOut ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) : 1)).toLocaleString()}</span>
+                        <span className="text-lg font-black text-emerald-900 tracking-tighter">₹{calculateTotalPrice().toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -668,11 +804,7 @@ const VillaDetails = () => {
                 </div>
               ) : (
                 <Button
-                  onClick={() => {
-                    const refId = "VN-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-                    setBookingId(refId);
-                    setIsBooked(true);
-                  }}
+                  onClick={handleInitiateBooking}
                   className="relative z-10 w-full h-20 bg-primary hover:bg-primary/90 text-white font-black text-2xl rounded-[1.5rem] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Book Villa
@@ -712,6 +844,85 @@ const VillaDetails = () => {
           </div>
         </div>
       </main>
+
+      {/* ================= BOOKING CONFIRMATION MODAL ================= */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="max-w-md w-[90%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl glass">
+          <DialogHeader className="p-8 pb-4 bg-primary/5">
+            <DialogTitle className="text-3xl font-black italic tracking-tighter flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              Confirm Your Stay
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/40 border border-black/5">
+                <Home className="w-5 h-5 text-primary mt-1" />
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Property</p>
+                  <p className="font-bold text-lg">{villa.name}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-white/40 border border-black/5">
+                  <Calendar className="w-4 h-4 text-primary mb-2" />
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Check-In</p>
+                  <p className="font-bold text-sm">{formatDate(checkIn)}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/40 border border-black/5">
+                  <Calendar className="w-4 h-4 text-primary mb-2" />
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Check-Out</p>
+                  <p className="font-bold text-sm">{formatDate(checkOut)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-white/40 border border-black/5">
+                  <Users className="w-4 h-4 text-primary mb-2" />
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Guests</p>
+                  <p className="font-bold text-sm">{guests} Guests</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/40 border border-black/5">
+                  <Info className="w-4 h-4 text-primary mb-2" />
+                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Plan</p>
+                  <p className="font-bold text-sm uppercase">{stayType}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-3">
+                  <IndianRupee className="w-5 h-5 text-emerald-600" />
+                  <span className="font-bold text-emerald-900">Total Cost </span>
+                </div>
+                <span className="text-2xl font-black text-emerald-600 tracking-tighter">
+                  ₹{calculateTotalPrice().toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmModal(false)}
+              className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] border-black/10 hover:bg-secondary"
+            >
+              Cancel / Edit
+            </Button>
+            <Button
+              onClick={handleConfirmBooking}
+              disabled={isFinalizing}
+              className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary text-white shadow-lg shadow-primary/20"
+            >
+              {isFinalizing ? "Processing..." : "Confirm Booking"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ================= IMAGE ENLARGEMENT MODAL ================= */}
       {enlargedImage && (

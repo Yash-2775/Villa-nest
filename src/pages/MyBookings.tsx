@@ -239,9 +239,34 @@ const MyBookings = () => {
                         <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                           <Home className="w-4 h-4 text-primary" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40 leading-none">Villa: {b.villa_id}</span>
+                        <span className="text-[12px] font-black uppercase tracking-widest text-foreground leading-none">
+                          {(b as any).villa_name || `Villa ID: ${b.villa_id}`}
+                        </span>
                       </div>
                       {statusBadge(b.status)}
+                    </div>
+
+                    <div className="flex flex-wrap gap-4">
+                      {(b as any).reference_id && (
+                        <Badge variant="outline" className="h-6 px-3 rounded-full border-black/5 text-[8px] font-black uppercase tracking-[0.2em] bg-primary/5 text-primary">
+                          Ref: {(b as any).reference_id}
+                        </Badge>
+                      )}
+                      {(b as any).guests && (
+                        <Badge variant="outline" className="h-6 px-3 rounded-full border-black/5 text-[8px] font-black uppercase tracking-[0.2em]">
+                          {(b as any).guests} Guests
+                        </Badge>
+                      )}
+                      {(b as any).rooms && (
+                        <Badge variant="outline" className="h-6 px-3 rounded-full border-black/5 text-[8px] font-black uppercase tracking-[0.2em]">
+                          {(b as any).rooms === "Full Villa" ? "Full Villa" : `${(b as any).rooms} Rooms`}
+                        </Badge>
+                      )}
+                      {(b as any).meal_plan && (
+                        <Badge variant="outline" className="h-6 px-3 rounded-full border-black/5 text-[8px] font-black uppercase tracking-[0.2em]">
+                          {(b as any).meal_plan === "with" ? "Food Included" : "No Meals"}
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="space-y-2">
