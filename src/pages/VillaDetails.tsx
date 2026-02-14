@@ -490,6 +490,9 @@ const VillaDetails = () => {
                         <img
                           src={img}
                           alt={`${villa.name} - ${i + 1}`}
+                          loading={i === 0 ? "eager" : "lazy"}
+                          fetchPriority={i === 0 ? "high" : "low"}
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>

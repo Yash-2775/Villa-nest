@@ -46,8 +46,11 @@
     --border: 145 15% 85%;
     --input: 145 15% 85%;
     --ring: 145 25% 60%;
-    --radius: 0.75rem;
-    /* 12px roughly */
+    --emerald: 145 25% 60%;
+    --emerald-light: 145 20% 90%;
+    --emerald-dark: 145 30% 20%;
+    --radius: 1rem;
+    /* 16px */
   }
 
   .dark {
